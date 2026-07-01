@@ -20,7 +20,12 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 WORKDIR /var/www/html
 
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+# NOTE: composer.lock is stale (pinned to laravel/framework v5.4.16 while
+# composer.json requires 5.8.*). Using `update` here so Railway's build
+# resolves fresh 5.8.*-compatible versions. Regenerate composer.lock
+# locally with `composer update` and commit it once you can, so builds
+# go back to being reproducible via `composer install`.
+RUN composer update --no-dev --no-scripts --no-autoloader --prefer-dist
 
 COPY . .
 RUN composer dump-autoload --optimize --no-dev
