@@ -17,6 +17,14 @@ fi
 # Storage symlink (safe to re-run)
 php artisan storage:link || true
 
+# Company logo / avatar uploads are saved to resources/assets/uploads by the
+# app, which sits outside public/ (our docroot). Symlink it in so uploads
+# are actually reachable over HTTP. Idempotent.
+mkdir -p public/resources/assets
+if [ ! -e public/resources/assets/uploads ]; then
+  ln -s ../../../resources/assets/uploads public/resources/assets/uploads
+fi
+
 # Run pending migrations. Set RUN_MIGRATIONS=false in Railway to skip.
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
   php artisan migrate --force
