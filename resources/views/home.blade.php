@@ -184,8 +184,7 @@
       <div class="panel">
         <div class="panel-heading"><h3>Sales Of Last 7days</h3></div>
         <div class="panel-body">
-          <!-- This will render the chart -->
-          {!! $productSaleOfLastSevenDay->render() !!}
+          <canvas id="productSaleChart" height="120"></canvas>
         </div>
       </div>
     </div>
@@ -195,8 +194,7 @@
       <div class="panel">
         <div class="panel-heading"><h3>Expense Of Last 7days</h3></div>
         <div class="panel-body">
-          <!-- This will render the chart -->
-          {!! $expensesOfLastSevenDay->render() !!}
+          <canvas id="expensesChart" height="120"></canvas>
         </div>
       </div>
     </div>
@@ -207,7 +205,7 @@
       <div class="panel">
         <div class="panel-heading"><h3>Last 7 months Customer rate</h3></div>
         <div class="panel-body">
-          {!! $customerLastSevenMonthsChart->render() !!}
+          <canvas id="customerChart" height="120"></canvas>
         </div>
       </div>
     </div>
@@ -217,11 +215,73 @@
       <div class="panel">
         <div class="panel-heading"><h3>Monthly Stat</h3></div>
         <div class="panel-body">
-          {!! $revenue->render() !!}
+          <canvas id="revenueChart" height="120"></canvas>
         </div>
       </div>
     </div>
   </div>
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var productSaleData = @json($productSaleOfLastSevenDay);
+    var expensesData = @json($expensesOfLastSevenDay);
+    var customerData = @json($customerLastSevenMonthsChart);
+    var revenueData = @json($revenue);
+
+    new Chart(document.getElementById('productSaleChart'), {
+      type: 'line',
+      data: {
+        labels: productSaleData.labels,
+        datasets: [{
+          label: 'Sales Count',
+          data: productSaleData.data,
+          borderColor: '#3c8dbc',
+          backgroundColor: 'rgba(60,141,188,0.2)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    new Chart(document.getElementById('expensesChart'), {
+      type: 'bar',
+      data: {
+        labels: expensesData.labels,
+        datasets: [{
+          label: 'Total Expense',
+          data: expensesData.data,
+          backgroundColor: '#dd4b39'
+        }]
+      },
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    new Chart(document.getElementById('customerChart'), {
+      type: 'bar',
+      data: {
+        labels: customerData.labels,
+        datasets: [{
+          label: 'Customer Amount',
+          data: customerData.data,
+          backgroundColor: '#00a65a'
+        }]
+      },
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    new Chart(document.getElementById('revenueChart'), {
+      type: 'line',
+      data: {
+        labels: revenueData.labels,
+        datasets: [
+          { label: 'Expenses', data: revenueData.expenses, borderColor: '#ff0000', backgroundColor: 'rgba(255,0,0,0.15)', fill: true, tension: 0.3 },
+          { label: 'Sales', data: revenueData.sales, borderColor: '#87C1FB', backgroundColor: 'rgba(135,193,251,0.2)', fill: true, tension: 0.3 }
+        ]
+      },
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+  });
+  </script>
   @endif
 </div>
 

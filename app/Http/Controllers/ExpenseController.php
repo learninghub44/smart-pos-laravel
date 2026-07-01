@@ -7,7 +7,6 @@ use App\Invoice as Invoice;
 use App\Expense_categorie as Expense_categorie;
 use PDF;
 use DB;
-use Charts;
 use Image;
 
 class ExpenseController extends Controller

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Auth;
 use Image;
-use Charts;
 use DB;
 use Hash;
 use Session;
@@ -67,18 +66,23 @@ class HomeController extends Controller
     ->get();
     $numberOfUserscount = User::all()->where('id','<>',1)->where('password','<>','deleteduser')->count();
 
-    $dataForexpensesOfLastSevenDay = DB::table('expenses')
-                     ->select(DB::raw('sum(amount) as sumof, DATE(created_at) as date'))
-                     ->where('created_at', '>', \Carbon\Carbon::now(CommonSetting::timezone())->subWeek()->toDateString())
+    // ---- Chart data (plain arrays, rendered client-side with Chart.js) ----
+    // Package `consoletvs/charts` was dropped: its 4.x line was pulled from
+    // Packagist and 6.x has an incompatible API, so this data is now built
+    // directly and rendered with Chart.js in the view instead.
+
+    //barchart: last 7 days expense (zero-filled so gaps don't disappear)
+    $expensesOfLastSevenDayRaw = DB::table('expenses')
+                     ->select(DB::raw('DATE(created_at) as date, sum(amount) as sumof'))
+                     ->where('created_at', '>=', \Carbon\Carbon::now(CommonSetting::timezone())->subDays(6)->startOfDay())
                      ->groupBy('date')
-                     ->get();
-    //barchart
-    $expensesOfLastSevenDay = Charts::create('bar', 'highcharts')
-                 ->title('Last 7 Days Expense')
-                 ->elementLabel('Total Expense')
-                 ->labels($dataForexpensesOfLastSevenDay->pluck('date'))
-                 ->values($dataForexpensesOfLastSevenDay->pluck('sumof'))
-                 ->responsive(true);
+                     ->pluck('sumof', 'date');
+    $expensesOfLastSevenDay = ['labels' => [], 'data' => []];
+    for ($i = 6; $i >= 0; $i--) {
+      $day = \Carbon\Carbon::now(CommonSetting::timezone())->subDays($i)->toDateString();
+      $expensesOfLastSevenDay['labels'][] = $day;
+      $expensesOfLastSevenDay['data'][] = (float) ($expensesOfLastSevenDayRaw[$day] ?? 0);
+    }
 
     //expense chart of one month
     $expenseListings = Expense::whereDate('created_at', \Carbon\Carbon::now(CommonSetting::timezone())->toDateString())->get();
@@ -90,52 +94,48 @@ class HomeController extends Controller
     ->selectRaw('sum(amount_paid) as total_Sale')
     ->get();
 
-    //7 months customer adding Chart
-    $currentYear = \Carbon\Carbon::now(CommonSetting::timezone())->format('Y');
-    $customerLastSevenMonthsChart = Charts::database(Customer::all()->where('id', '!=', 1), 'bar', 'highcharts')
-    ->title("Customer Last 7 Months")
-    ->elementLabel("Customer Amount")
-    ->responsive(true)
-    ->groupByMonth($currentYear, true)
-    ->lastByMonth(7);
+    //7 months customer adding Chart (rolling last 7 calendar months, excludes walk-in customer id 1)
+    $customerLastSevenMonthsChart = ['labels' => [], 'data' => []];
+    for ($i = 6; $i >= 0; $i--) {
+      $monthCursor = \Carbon\Carbon::now(CommonSetting::timezone())->subMonths($i);
+      $count = Customer::where('id', '!=', 1)
+        ->whereYear('created_at', $monthCursor->year)
+        ->whereMonth('created_at', $monthCursor->month)
+        ->count();
+      $customerLastSevenMonthsChart['labels'][] = $monthCursor->format('M Y');
+      $customerLastSevenMonthsChart['data'][] = $count;
+    }
 
-    //donut
-    $expenseCategoryDonut = Charts::database(Expense::all(), 'pie', 'c3')
-    ->title('Expense Category')
-    ->responsive(true)
-    ->groupBy('expense_categorie_id',null,[1 => 'Withdraw At Store Close', 2 => 'Vendor Due Payment']);
-    //donut-end
+    //7days products chart: count of sales per day, last 7 days, zero-filled
+    $productSaleOfLastSevenDayRaw = DB::table('sales')
+      ->select(DB::raw('DATE(created_at) as date, COUNT(*) as total'))
+      ->where('created_at', '>=', \Carbon\Carbon::now(CommonSetting::timezone())->subDays(6)->startOfDay())
+      ->groupBy('date')
+      ->pluck('total', 'date');
+    $productSaleOfLastSevenDay = ['labels' => [], 'data' => []];
+    for ($i = 6; $i >= 0; $i--) {
+      $day = \Carbon\Carbon::now(CommonSetting::timezone())->subDays($i)->toDateString();
+      $productSaleOfLastSevenDay['labels'][] = $day;
+      $productSaleOfLastSevenDay['data'][] = (int) ($productSaleOfLastSevenDayRaw[$day] ?? 0);
+    }
 
-    //7days products chart
-    $productSaleOfLastSevenDay = Charts::database(Sale::all(), 'line', 'highcharts')
-    ->title("Sales Of Last 7 Days")
-    ->elementLabel("Amount of Product Sale")
-    ->dimensions(1000, 500)
-    ->responsive(true)
-    ->lastByDay(7, true);
+    //monthly stat: expenses vs sales, aligned by calendar month (Jan-Dec)
+    $expensesByMonthRaw = DB::table('expenses')
+      ->select(DB::raw('MONTH(created_at) as month, sum(amount) as total'))
+      ->groupBy('month')
+      ->pluck('total', 'month');
+    $salesByMonthRaw = DB::table('customer_transection_histories')
+      ->select(DB::raw('MONTH(created_at) as month, sum(amount_paid) as total'))
+      ->groupBy('month')
+      ->pluck('total', 'month');
+    $monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    $revenue = ['labels' => $monthNames, 'expenses' => [], 'sales' => []];
+    for ($m = 1; $m <= 12; $m++) {
+      $revenue['expenses'][] = (float) ($expensesByMonthRaw[$m] ?? 0);
+      $revenue['sales'][] = (float) ($salesByMonthRaw[$m] ?? 0);
+    }
 
-    //customer chart
-    $dataForRevenueFromCustomerTransectionHistories = DB::table('customer_transection_histories')
-    ->select(DB::raw('sum(amount_paid) as sumof, Month(created_at) as date'))
-    ->groupBy('date')
-    ->get();
-
-    //expense and revenue chart
-    $dataForRevenueFromExpenses = DB::table('expenses')
-    ->select(DB::raw('sum(amount) as sumofexpense, Month(created_at) as date'))
-    ->groupBy('date')
-    ->get();
-
-    //highchart
-    $revenue = Charts::multi('areaspline', 'highcharts')
-    ->title('Monthly Stat')
-    ->elementLabel("1=Jan;2=Feb...")
-    ->colors(['#ff0000', '#87C1FB'])
-    ->labels($dataForRevenueFromExpenses->pluck('date'))
-    ->dataset('Expenses',  $dataForRevenueFromExpenses->pluck('sumofexpense'))
-    ->dataset('Sales',  $dataForRevenueFromCustomerTransectionHistories->pluck('sumof'));
-
-    return view('home', compact('currency','numberOfVendorscount','numberOfCustomerscount','todaysExpense','numberOfUserscount','expensesOfLastSevenDay','customerLastSevenMonthsChart','expenseListings','salesListings','totalExpense','totalSale','expenseCategoryDonut','productSaleOfLastSevenDay','revenue'));
+    return view('home', compact('currency','numberOfVendorscount','numberOfCustomerscount','todaysExpense','numberOfUserscount','expensesOfLastSevenDay','customerLastSevenMonthsChart','expenseListings','salesListings','totalExpense','totalSale','productSaleOfLastSevenDay','revenue'));
   }
 
 
