@@ -1,7 +1,7 @@
 {
-    "name": "laravel/laravel",
-    "description": "The Laravel Framework.",
-    "keywords": ["framework", "laravel"],
+    "name": "learninghub44/zetu-pos",
+    "description": "Zetu POS - Multi-purpose Point of Sale system.",
+    "keywords": ["pos", "point-of-sale", "laravel", "zetu"],
     "license": "MIT",
     "type": "project",
     "require": {

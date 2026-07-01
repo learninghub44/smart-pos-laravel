@@ -1,13 +1,4 @@
 <?php
-/*
-
- # APPLICATION NAME: Smart-POS System
- # AUTHOR:           Mathew Harb
- # SITE:             https://github.com/mathewharb
- # EMAIL:            harbmathew@yahoo.com
- # CONTACT:          +2207425159
-
-*/
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -75,7 +66,7 @@ class PdfController extends Controller
     </div>
     <div id='footer'>
     <hr>
-    <span class='page' style='float:right; font-size:8px;'>Developed By: https://github.com/mathesharb | +220742515</span>
+    <span class='page' style='float:right; font-size:8px;'>\".getTheCompanyName().\"</span>
     <span class='page'>Page </span>
     </div>
     <div id='content'><h1 class='title'>";
@@ -144,7 +135,7 @@ class PdfController extends Controller
     </div>
     <div id='footer'>
     <hr>
-    <span class='page' style='float:right; font-size:8px;'>Developed By: https://github.com/mathesharb | +2207425159</span>
+    <span class='page' style='float:right; font-size:8px;'>\".getTheCompanyName().\"</span>
     <span class='page'>Page </span>
     </div>
     <div id='content'>";

@@ -12,15 +12,15 @@ class SettingTableSeeder extends Seeder
     public function run()
     {
       DB::table('settings')->insert([
-          'company_name' => 'HarbCreation',
-          'phone_number' => '2207425159',
-          'address' => "Kanifing-Gambia",
-          'currency' => 'GMD',
-          'default_vat' => 15,
+          'company_name' => 'Zetu POS',
+          'phone_number' => '',
+          'address' => "Kenya",
+          'currency' => 'KES',
+          'default_vat' => 16,
           'logo' => 'defaultcompanylogo.png',
           'created_at' => \Carbon\Carbon::now()->toDateTimeString(),
-          'time_zone' => 'Europe/Paris',
-          'delivery_charge' => 60,
+          'time_zone' => 'Africa/Nairobi',
+          'delivery_charge' => 0,
       ]);
     }
 }

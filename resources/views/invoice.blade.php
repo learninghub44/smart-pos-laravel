@@ -243,7 +243,7 @@
               </tbody>
             </table>
             <div class="invoiceFooter text-center">
-              <span>Developed by: https://github.com/mathewharb | +2207425159</span>
+              <span>{{getTheCompanyName()}}</span>
             </div>
           </div>
         </div>

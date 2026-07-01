@@ -15,6 +15,10 @@ class DatabaseSeeder extends Seeder
         $this->call(CustomerTableSeeder::class);
         $this->call(StoreStatusSeeder::class);
         $this->call(Expense_categoriesSeeder::class);
-        $this->call(UserTableSeeder::class);
+
+        // UserTableSeeder (default admin@admin.com / password) intentionally
+        // NOT run automatically. Create your own admin instead, e.g. via:
+        // php artisan tinker
+        // \App\User::create(['name'=>'Your Name','email'=>'you@yourdomain.com','password'=>bcrypt('your-strong-password'),'role'=>'admin']);
     }
 }
